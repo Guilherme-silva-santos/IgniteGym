@@ -42,7 +42,12 @@ export function Exercise() {
           mb={8}
           alignItems="center"
         >
-          <Heading color="gray.100" fontSize="lg" flexShrink={1}>
+          <Heading
+            color="gray.100"
+            fontSize="lg"
+            flexShrink={1}
+            fontFamily="heading"
+          >
             {/**
              * flexShrink={1} para que o texto nãop empurre o icone para fora
              * e sim quebre a linha quando for necessário
