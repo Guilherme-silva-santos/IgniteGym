@@ -1,5 +1,13 @@
 /* eslint-disable jsx-a11y/alt-text */
-import { VStack, Image, Text, Center, Heading, ScrollView } from 'native-base'
+import {
+  VStack,
+  Image,
+  Text,
+  Center,
+  Heading,
+  ScrollView,
+  useToast,
+} from 'native-base'
 
 import { useNavigation } from '@react-navigation/native'
 import { AuthNavigatorRoutesProps } from '../routes/auth.routes'
@@ -14,6 +22,9 @@ import { useForm, Controller } from 'react-hook-form'
 
 import * as yup from 'yup'
 import { yupResolver } from '@hookform/resolvers/yup'
+import { useAuth } from '../hooks/useAuth'
+import { AppError } from '../utils/AppError'
+import { useState } from 'react'
 
 type FormDataProps = {
   email: string
@@ -29,9 +40,15 @@ const signInSchema = yup.object({
 })
 
 export function SignIn() {
+  const [isLoading, setIsLoading] = useState(false)
+
+  const { signIn } = useAuth()
   const navigation = useNavigation<AuthNavigatorRoutesProps>()
-  // passa para o useRoutes a tipagem das rotas da aplicação
-  // para que seja possivel utilizar ambas as tipagens dependendo do contexto
+  /**
+   * passa para o useRoutes a tipagem das rotas da aplicação
+   * para que seja possivel utilizar ambas as tipagens dependendo do contexto
+   */
+  const toast = useToast()
 
   const {
     control,
@@ -46,8 +63,26 @@ export function SignIn() {
     // passa a rota que o user deve ser direcionado ao clicar o botão
   }
 
-  function handleSignIn(data: FormDataProps) {
-    console.log(data)
+  async function handleSignIn({ email, password }: FormDataProps) {
+    try {
+      setIsLoading(true)
+      await signIn(email, password)
+    } catch (error) {
+      // faz uma verificação se o erro que aconteceu pertence ao apperror ou seja se é um erro tratado
+      const isAppError = error instanceof AppError
+
+      const title = isAppError
+        ? error.message
+        : 'Não foi passível entrar, tente novamente mais tartde '
+
+      setIsLoading(false)
+
+      toast.show({
+        title,
+        placement: 'top',
+        bgColor: 'red.500',
+      })
+    }
   }
 
   return (
@@ -77,6 +112,7 @@ export function SignIn() {
           <Controller
             control={control}
             name="email"
+            rules={{ required: 'Informe o e-mail' }}
             render={({ field: { onChange, value } }) => (
               <Input
                 placeholder="E-mail"
@@ -92,6 +128,7 @@ export function SignIn() {
           <Controller
             control={control}
             name="password"
+            rules={{ required: 'Informe a senha' }}
             render={({ field: { onChange, value } }) => (
               <Input
                 placeholder="Senha"
@@ -102,7 +139,13 @@ export function SignIn() {
               />
             )}
           />
-          <Button title="Acessar" onPress={handleSubmit(handleSignIn)} />
+          <Button
+            title="Acessar"
+            onPress={handleSubmit(handleSignIn)}
+            // a propriedade isloading é nativa do botão do nativebase e para dentro dela foi pasada
+            // o estado de isloading que toda vez que o botão for clicado o estado é alterado para truw
+            isLoading={isLoading}
+          />
         </Center>
         <Center mt={24}>
           <Text color="gray.100" fontSize="sm" mb={3} fontFamily="body">
