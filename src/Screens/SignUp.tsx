@@ -23,6 +23,8 @@ import { yupResolver } from '@hookform/resolvers/yup'
 
 import { api } from '../services/api'
 import { AppError } from '../utils/AppError'
+import { useState } from 'react'
+import { useAuth } from '../hooks/useAuth'
 
 type FormDataProps = {
   name: string
@@ -45,7 +47,9 @@ const signUpSchema = yup.object({
 })
 
 export function SignUp() {
+  const [isLoading, setIsLoading] = useState(false)
   const tost = useToast()
+  const { signIn } = useAuth()
 
   const {
     control,
@@ -61,9 +65,11 @@ export function SignUp() {
 
   async function handleSignUp({ name, email, password }: FormDataProps) {
     try {
-      const response = await api.post('/users', { name, email, password })
-      console.log(response.data)
+      setIsLoading(true)
+      await api.post('/users', { name, email, password })
+      await signIn(email, password)
     } catch (error) {
+      setIsLoading(false)
       // caso haja um erro então verifica se o erro é uma instancia do appError ou seja se ele é um erro ja tratado
       const isAppError = error instanceof AppError
       // pega o app erro e verifica se ele possui uma mensagem tratada se não houver coloca um titulo genérico na mensagem
@@ -167,6 +173,7 @@ export function SignUp() {
           <Button
             title="Criar e acessar"
             onPress={handleSubmit(handleSignUp)}
+            isLoading={isLoading}
           />
         </Center>
         <Button
