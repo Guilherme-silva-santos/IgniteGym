@@ -44,7 +44,6 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
     // e armazena as informaç~çoes do user no estado
     api.defaults.headers.common.Athorization = `Bearer ${token}`
     // com o tipo do token que é bearer e passando o token par ele
-
     setUser(userData)
     // apos salvar as informações do user atualiza o estado de user
   }
