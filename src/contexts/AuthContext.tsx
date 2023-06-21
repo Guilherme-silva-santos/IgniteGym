@@ -1,3 +1,4 @@
+/* eslint-disable dot-notation */
 /* eslint-disable no-useless-catch */
 import { ReactNode, createContext, useEffect, useState } from 'react'
 import { UserDTO } from '../dtos/UserDTO'
@@ -41,8 +42,8 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
 
   async function UserAndTokenUpdate(userData: UserDTO, token: string) {
     // função que atualiza o token do user no cabeçalho da requisição
-    // e armazena as informaç~çoes do user no estado
-    api.defaults.headers.common.Athorization = `Bearer ${token}`
+    // e armazena as informaçoes do user no estado
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`
     // com o tipo do token que é bearer e passando o token par ele
     setUser(userData)
     // apos salvar as informações do user atualiza o estado de user
