@@ -1,20 +1,52 @@
-import { useState } from 'react'
-import { Heading, VStack, SectionList, Text } from 'native-base'
+/* eslint-disable react-hooks/exhaustive-deps */
+import { useCallback, useState } from 'react'
+import { Heading, VStack, SectionList, Text, useToast } from 'native-base'
 
 import { ScreenHeader } from '../components/ScreenHeader'
 import { HistoryCard } from '../components/HistoryCard'
+import { AppError } from '../utils/AppError'
+import { api } from '../services/api'
+import { useFocusEffect } from '@react-navigation/native'
+import { HistoryByDayDTO } from '../dtos/HistoryByDayDTO'
 
 export function History() {
-  const [exercises, setExercises] = useState([
-    {
-      title: '28.08.23',
-      data: ['Puxada Frontal', 'Remada unilateral'],
-    },
-    {
-      title: '29.08.23',
-      data: ['Puxada Frontal'],
-    },
-  ])
+  const [isLoading, setIsLoading] = useState(true)
+  const [exercises, setExercises] = useState<HistoryByDayDTO[]>([])
+  const toast = useToast()
+
+  async function fetchHistory() {
+    try {
+      setIsLoading(true)
+      const response = await api.get('/history')
+      setExercises(response.data)
+    } catch (error) {
+      const isAppError = error instanceof AppError
+      const title = isAppError
+        ? error.message
+        : 'Não foi possível carregar o histórico. Tente novamente mais tarde'
+
+      toast.show({
+        title,
+        placement: 'top',
+        bgColor: 'red.500',
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  /**
+   * serve para para perceber quando a home tera focu novamente
+   * por exemplo caso o user vá para o histórico e volte para home
+   * useCallback para que a função não seja executada de forma desnecesaria
+   * só quando for preciso buscar as informações
+   * groupSelected para que toda vez que o grupo selecionado mudar o hook seja carregado
+   */
+  useFocusEffect(
+    useCallback(() => {
+      fetchHistory()
+    }, []),
+  )
 
   return (
     <VStack flex={1}>
@@ -22,8 +54,8 @@ export function History() {
 
       <SectionList
         sections={exercises}
-        keyExtractor={(item) => item}
-        renderItem={({ item }) => <HistoryCard />}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => <HistoryCard data={item} />}
         renderSectionHeader={({ section }) => (
           <Heading color="gray.200" fontSize="md" mt={10} mb={3}>
             {section.title}
