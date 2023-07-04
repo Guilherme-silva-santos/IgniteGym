@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable dot-notation */
 /* eslint-disable no-useless-catch */
 import { ReactNode, createContext, useEffect, useState } from 'react'
@@ -50,14 +51,18 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
     // apos salvar as informações do user atualiza o estado de user
   }
 
-  async function UserAndTokenStorageSave(userData: UserDTO, token: string) {
+  async function UserAndTokenStorageSave(
+    userData: UserDTO,
+    token: string,
+    refresh_token: string,
+  ) {
     // função que salva as informações no dispositivo do user
     try {
       setIsLoadingUserStorageData(true)
       await storageUserSave(userData)
       // salvando o user dentro do storage
-      await storageAuthTokenSave(token)
-      // salvando o token do user dentro do storage
+      await storageAuthTokenSave({ token, refresh_token })
+      // salvando o token do user dentro do storage/função
     } catch (error) {
       throw error
     } finally {
@@ -75,9 +80,9 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
        *  foi usando o async pois a solicitação para o back-end é feita de forma asincrona por padrão
        */
       const { data } = await api.post('/sessions', { email, password })
-      if (data.user && data.token) {
+      if (data.user && data.token && data.refresh_token) {
         // armazena od dados do user no dispositivo
-        await UserAndTokenStorageSave(data.user, data.token)
+        await UserAndTokenStorageSave(data.user, data.token, data.refresh_token)
         // atualiza tanto o estado quanto o cabeçalho que estão presentes nessa função
         UserAndTokenUpdate(data.user, data.token)
         // chama a função que armazena o token e o user, pega dela o token e o user
@@ -118,7 +123,7 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
     try {
       setIsLoadingUserStorageData(true)
       const userLogged = await storageUserGet()
-      const token = await storageAuthTokenGet()
+      const { token } = await storageAuthTokenGet()
 
       if (token && userLogged) {
         /**
@@ -137,8 +142,16 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
 
   useEffect(() => {
     loadingUserData()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  useEffect(() => {
+    const subscribe = api.registerInterceptTokenManager(signOut)
+    // para a função passa o singout, quando a aplicação carregar ele vai passar pelo useEffect
+    // então registra a função registerInterceptTokenManager e passa o singout par dentro dela
+    return () => {
+      subscribe()
+    }
+  }, [signOut])
 
   return (
     <AuthContext.Provider
